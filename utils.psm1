@@ -8,7 +8,7 @@ function Invoke-FuzzySetLocation {
 
     Invoke-Expression $base `
     | ForEach-Object {"$_"} `
-    | fzf --layout=reverse --preview "$env:SHELL -command """"get-childitem {}|bat -f"""" "`
+    | fzf --layout=reverse --preview "$env:SHELL -command . ""$PROFILE""; get-childitem {} | bat -f "`
     | Set-Location
 }
 
@@ -21,7 +21,7 @@ function Invoke-FuzzyEditFile {
   $fd_command = "fd -t 'f' $a"
 
   Invoke-Expression $fd_command `
-  | fzf --layout=reverse --preview "$env:SHELL -c bat --color='always' """"{}""""" `
+  | fzf --layout=reverse --preview "$env:SHELL -command . ""$PROFILE""; bat --color='always' """"{}""""" `
   | ForEach-Object {code -g "$_"}
 
 }
@@ -36,12 +36,12 @@ function Invoke-RGFuzzyEditLine {
 
   $rg_command = "rg $p --path-separator '/' --field-match-separator ' :: ' -n $a"
 
-  Invoke-Expression $rg_command
-  | ForEach-Object {$_ -replace """", "'"}
-  | ForEach-Object { $_ -replace '`', ''''}
-  | fzf --layout=reverse --preview "$env:SHELL -c Invoke-BatPreview """"{}"""""
-  | select-string -Pattern "(.+?) \:+? (\d+?) \:+?"
-  | ForEach-Object {"$($_.Matches.Groups[1].Value):$($_.Matches.Groups[2].Value)"}
+  Invoke-Expression $rg_command `
+  | ForEach-Object {$_ -replace """", "'"} `
+  | ForEach-Object { $_ -replace '`', ''''} `
+  | fzf --layout=reverse --preview "$env:SHELL -command . ""$PROFILE""; Invoke-BatPreview """"{}""""" `
+  | select-string -Pattern "(.+?) \:+? (\d+?) \:+?" `
+  | ForEach-Object {"$($_.Matches.Groups[1].Value):$($_.Matches.Groups[2].Value)"} `
   | ForEach-Object {code -g $_}
 
 }
@@ -56,13 +56,13 @@ function Invoke-FuzzyEditLine {
 
   $counter = 0
 
-  Get-Content $f
-  | ForEach-Object {$_ -replace """", "'"}
-  | ForEach-Object {$_ -replace '`', ''''}
-  | ForEach-Object {$counter += 1; "$counter :: $_"}
-  | fzf --layout=reverse --preview "$env:SHELL -c Invoke-BatPreview -s """"{}"""" -f """"$f"""""
-  | select-string -Pattern "(\d+?) \:+?"
-  | ForEach-Object {$_.Matches.Groups[1].Value}
+  Get-Content $f `
+  | ForEach-Object {$_ -replace """", "'"} `
+  | ForEach-Object {$_ -replace '`', ''''} `
+  | ForEach-Object {$counter += 1; "$counter :: $_"} `
+  | fzf --layout=reverse --preview "$env:SHELL -command . ""$PROFILE"";  Invoke-BatPreview -s """"{}"""" -f """"$f""""" `
+  | select-string -Pattern "(\d+?) \:+?" `
+  | ForEach-Object {$_.Matches.Groups[1].Value} `
   | ForEach-Object {code -g "$f\:$_"}
 }
 
